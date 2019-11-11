@@ -1,0 +1,20 @@
+archsim_add_sources(
+	CommandLineManager.cpp
+	Counter.cpp
+	CounterTimer.cpp
+	FlexiZone.cpp
+	Histogram.cpp
+	Lifetime.cpp
+	LivePerformanceMeter.cpp
+	LogContext.cpp
+	LogSpecParser.cpp
+	LogTargets.cpp
+	MemAllocator.cpp
+	MultiHistogram.cpp
+	PagePool.cpp
+	PubSubSync.cpp
+	string_util.cpp
+	TimerManager.cpp
+)
+
+ADD_SUBDIRECTORY(system)

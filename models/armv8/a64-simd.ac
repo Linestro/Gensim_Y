@@ -1,0 +1,1075 @@
+/*
+ * GenSim AARCH64 Model
+ *
+ * Copyright (C) University of Edinburgh 2017.  All Rights Reserved.
+ *
+ * Tom Spink <tspink@inf.ed.ac.uk>
+ */
+AC_ISA(a64)
+{
+	// C4.4.1	Advanced SIMD load/store multiple structures
+	ac_format SIMD_LS_MULT = "0x0:1 %Q:1 0x18:7 %L:1 0x0:6 %opcode:4 %size:2 %rn:5 %rt:5";
+	ac_instr<SIMD_LS_MULT> st1, st2, st3, st4, ld1, ld2, ld3, ld4;
+	ac_behaviour st1, st2, st3, st4, ld1, ld2, ld3, ld4;
+
+	// C4.4.2	Advanced SIMD load/store multiple structures (post-indexed)
+	ac_format SIMD_LS_MULT_PI = "0x0:1 %Q:1 0x19:7 %L:1 0x0:1 %rm:5 %opcode:4 %size:2 %rn:5 %rt:5";
+	ac_instr<SIMD_LS_MULT_PI> st1pi, st2pi, st3pi, st4pi, ld1pi, ld2pi, ld3pi, ld4pi;
+	ac_behaviour st1pi, st2pi, st3pi, st4pi, ld1pi, ld2pi, ld3pi, ld4pi;
+
+	// C4.4.3	Advanced SIMD load/store single structure
+	ac_format SIMD_LS_SINGLE = "0x0:1 %Q:1 0x1a:7 %L:1 %R:1 0x0:5 %opcode:3 %S:1 %size:2 %rn:5 %rt:5";
+	ac_instr<SIMD_LS_SINGLE> ld1r, ld1s, st1s;
+	ac_behaviour ld1r, ld1s, st1s;
+
+	// C4.4.4	Advanced SIMD load/store single structure (post-indexed)
+	ac_format SIMD_LS_SINGLE_PI = "0x0:1 %Q:1 0x1b:7 %L:1 %R:1 %rm:5 %opcode:3 %S:1 %size:2 %rn:5 %rt:5";
+	ac_instr<SIMD_LS_SINGLE_PI> st1spi;
+	ac_behaviour st1spi;
+	
+
+	// -----------------------------------------------------------------
+	// C4.6 	Data processing - SIMD and floating point
+	// -----------------------------------------------------------------
+	
+	// C4.6.1 Advanced SIMD across lanes
+	ac_format SIMD_ACROSS_LANES = "0x0:1 %Q:1 %U:1 0xe:5 %size:2 0x18:5 %opcode:5 0x2:2 %rn:5 %rd:5";
+	ac_instr<SIMD_ACROSS_LANES> saddlv, smaxv, sminv, addv, uaddlv, umaxv, uminv, fmaxnmv, fmaxv, fminnmv, fminv;
+	ac_behaviour saddlv, smaxv, sminv, addv, uaddlv, umaxv, uminv, fmaxnmv, fmaxv, fminnmv, fminv;
+
+	// C4.6.2 Advanced SIMD copy
+	ac_format SIMD_COPY = "0x0:1 %Q:1 %op:1 0x70:8 %imm5:5 0x0:1 %imm4:4 0x1:1 %rn:5 %rd:5";
+	ac_instr<SIMD_COPY> dup_elem, dup_gen, smov, umov, ins_gen, ins_elem;
+	ac_behaviour dup_elem, dup_gen, smov, umov, ins_gen, ins_elem;
+
+	// C4.6.3 Advanced SIMD extract
+	ac_format SIMD_EXTRACT = "0x0:1 %Q:1 0x2e:6 %op2:2 0x0:1 %rm:5 0x0:1 %imm4:4 0x0:1 %rn:5 %rd:5";
+	ac_instr<SIMD_EXTRACT> ext;
+	ac_behaviour ext;
+
+	// C4.6.4 Advanced SIMD modified immediate
+	ac_format SIMD_MOD_IMM = "0x0:1 %Q:1 %op:1 0x1e0:10 %a:1 %b:1 %c:1 %cmode:4 %o2:1 0x1:1 %d:1 %e:1 %f:1 %g:1 %h:1 %rd:5";
+	ac_instr<SIMD_MOD_IMM> movi, mvni, bici, fmov_simd;
+	ac_behaviour movi, mvni, bici, fmov_simd;
+
+	// C4.6.5 Advanced SIMD permute
+	ac_format SIMD_PERMUTE = "0x0:1 %Q:1 0x0e:6 %size:2 0x0:1 %rm:5 0x0:1 %opcode:3 0x2:2 %rn:5 %rd:5";
+	ac_instr<SIMD_PERMUTE> uzp1, uzp2;
+	ac_behaviour uzp1, uzp2;
+
+	// C4.6.7 Advanced SIMD scalar pairwise
+	ac_format SIMD_SCALAR_PW = "0x1:2 %U:1 0x1e:5 %size:2 0x18:5 %opcode:5 0x2:2 %rn:5 %rd:5";
+	ac_instr<SIMD_SCALAR_PW> addp_scalar;
+	ac_behaviour addp_scalar;
+	
+	// C4.6.8 Advanced SIMD scalar shift by immediate
+	// C4.6.13 Advanced SIMD shift by immediate
+	ac_format SIMD_SHIFT_IMM = "0x0:1 %Q:1 %U:1 %SCALAR:1 0x1e:5 %immh:4 %immb:3 %opcode:5 0x1:1 %rn:5 %rd:5";
+	ac_instr<SIMD_SHIFT_IMM> sshr, ushr, shl_simd, sshll, ushll;
+	ac_behaviour sshr, ushr, shl_simd, sshll, ushll;
+
+	// C4.6.14 Advanced SIMD table lookup
+	ac_format SIMD_TABLE_LOOKUP = "0x0:1 %Q:1 0x0e:6 %op2:2 0x0:1 %rm:5 0x0:1 %len:2 %op:1 0x0:2 %rn:5 %rd:5";
+	ac_instr<SIMD_TABLE_LOOKUP> tbl, tbx;
+	ac_behaviour tbl, tbx;
+
+	// C4.6.9 Advanced SIMD scalar three different
+	// C4.6.15 Advanced SIMD three different
+	ac_format SIMD_THREE_DIFF = "0x0:1 %Q:1 %U:1 %SCALAR:1 0xe:4 %size:2 0x1:1 %rm:5 %opcode:4 0x0:2 %rn:5 %rd:5";
+	ac_instr<SIMD_THREE_DIFF> pmull, smull, umull, saddl, uaddl, saddw, uaddw, ssubl, usubl, ssubw, usubw;
+	ac_behaviour pmull, smull, umull, saddl, uaddl, saddw, uaddw, ssubl, usubl, ssubw, usubw;
+	
+	// C4.6.10 Advanced SIMD scalar three same
+	// C4.6.16 Advanced SIMD three same
+	ac_format SIMD_THREE_SAME = "0x0:1 %Q:1 %U:1 %SCALAR:1 0xe:4 %size:2 0x1:1 %rm:5 %opcode:5 0x1:1 %rn:5 %rd:5";
+	ac_instr<SIMD_THREE_SAME> add_vector, sub_vector, addp_vector, and_vector, orr_vector, eor_vector, orn_vector, bic_vector, mul_vector, mla_vector;
+	ac_instr<SIMD_THREE_SAME> fsub_vector, fmul_vector;
+	ac_instr<SIMD_THREE_SAME> cmeq_reg, cmhi_reg, cmtst, fabd, bsl, bit, bif, smax, smin, sshl, ushl;
+	ac_behaviour add_vector, sub_vector, addp_vector, and_vector, orr_vector, eor_vector, orn_vector, bic_vector, mul_vector, mla_vector;
+	ac_behaviour fsub_vector, fmul_vector;
+	ac_behaviour cmeq_reg, cmhi_reg, cmtst, fabd, bsl, bit, bif, smax, smin, sshl, ushl;
+
+	// C4.6.11 Advanced SIMD scalar two-register misc
+	// C4.6.17 Advanced SIMD two-register misc
+	ac_format SIMD_TWO_REG_MISC = "0x0:1 %Q:1 %U:1 %SCALAR:1 0xe:4 %size:2 0x10:5 %opcode:5 0x2:2 %rn:5 %rd:5";
+	ac_instr<SIMD_TWO_REG_MISC> cmeq_zero, cmge_zero, cmlt_zero, cnt, scvtf_simd, ucvtf_simd, fcmgt_zero, rev32_simd, rev64_simd, fcvtzs_simd, fcvtas_simd, neg_simd, xtn, shll, uaddlp, uadalp, not_simd, abs_simd;
+	ac_behaviour cmeq_zero, cmge_zero, cmlt_zero, cnt, scvtf_simd, ucvtf_simd, fcmgt_zero, rev32_simd, rev64_simd, fcvtzs_simd, fcvtas_simd, neg_simd, xtn, shll, uaddlp, uadalp, not_simd, abs_simd;
+
+	// C4.6.18 Advanced SIMD vector x indexed element
+	ac_format SIMD_VECTOR_IDX = "0x0:1 %Q:1 %U:1 0x0f:5 %size:2 %L:1 %M:1 %rm:4 %opcode:4 %H:1 0x0:1 %rn:5 %rd:5";
+	ac_instr<SIMD_VECTOR_IDX> mul_idx_vector;
+	ac_behaviour mul_idx_vector;
+
+	// C4.6.22 Floating-point compare
+	ac_format FP_CMP = "%M:1 0x0:1 %S:1 0x1e:5 %type:2 0x1:1 %rm:5 %op:2 0x8:4 %rn:5 %opcode2:5";
+	ac_instr<FP_CMP> fcmpe;
+	ac_behaviour fcmpe;
+
+	// C4.6.23 Floating-point conditional compare
+	ac_format FP_CCMP = "%M:1 0x0:1 %S:1 0x1e:5 %type:2 0x1:1 %rm:5 %cond:4 0x1:2 %rn:5 %op:1 %nzcv:4";
+	ac_instr<FP_CCMP> fccmpe;
+	ac_behaviour fccmpe;
+	
+	// C4.6.24 Floating-point conditional select
+	ac_format FP_CSEL = "%M:1 0x0:1 %S:1 0x1e:5 %type:2 0x1:1 %rm:5 %cond:4 0x3:2 %rn:5 %rd:5";
+	ac_instr<FP_CSEL> fcsel;
+	ac_behaviour fcsel;
+	
+	// C4.6.25 Floating-point data-processing (1 source)
+	ac_format FP_DP_1 = "%M:1 0x0:1 %S:1 0x1e:5 %type:2 0x1:1 %opcode:6 0x10:5 %rn:5 %rd:5";
+	ac_instr<FP_DP_1> fmov, fneg, fcvt, fabs, frintx, fsqrt;
+	ac_behaviour fmov, fneg, fcvt, fabs, frintx, fsqrt;
+
+	// C4.6.26 Floating-point data-processing (2 source)
+	ac_format FP_DP_2 = "%M:1 0x0:1 %S:1 0x1e:5 %type:2 0x1:1 %rm:5 %opcode:4 0x2:2 %rn:5 %rd:5";
+	ac_instr<FP_DP_2> fadd, fsub, fmul, fnmul, fdiv;
+	ac_behaviour fadd, fsub, fmul, fnmul, fdiv;
+
+	// C4.6.27 Floating-point data-processing (3 source)
+	ac_format FP_DP_3 = "%M:1 0x0:1 %S:1 0x1f:5 %type:2 %o1:1 %rm:5 %o0:1 %ra:5 %rn:5 %rd:5";
+	ac_instr<FP_DP_3> fm, fnm;
+	ac_behaviour fm, fnm;
+
+	// C4.6.28 Floating-point immediate
+	ac_format FP_IMM = "%M:1 0x0:1 %S:1 0x1e:5 %type:2 0x1:1 %imm8:8 0x4:3 %imm5:5 %rd:5";
+	ac_instr<FP_IMM> fmovi;
+	ac_behaviour fmovi;
+	
+	// C4.6.29 Conversion between floating-point and fixed-point
+	ac_format CVT_FP_FXP = "%sf:1 0x0:1 %S:1 0x1e:5 %type:2 0x0:1 %rmode:2 %opcode:3 %scale:6 %rn:5 %rd:5";
+	ac_instr<CVT_FP_FXP> fcvtz_fxp;
+	ac_behaviour fcvtz_fxp;
+
+	// C4.6.30 Conversion between floating-point and integer
+	ac_format CVT_FP_I = "%sf:1 0x0:1 %S:1 0x1e:5 %type:2 0x1:1 %rmode:2 %opcode:3 0x0:6 %rn:5 %rd:5";
+	ac_instr<CVT_FP_I> fmov_gen, scvtf, ucvtf, fcvtz, fcvti;
+	ac_behaviour fmov_gen, scvtf, ucvtf, fcvtz, fcvti;
+	
+	ac_field<uint8> arrangement;
+	ac_field<uint8> width;
+	ac_field<uint8> size;
+	ac_field<uint8> regcnt;
+	ac_field<uint8> elemcnt;
+	ac_field<uint8> elemsize;
+	ac_field<uint8> ta;
+	ac_field<uint8> tb;
+	ac_field<uint8> eindex;
+	ac_field<uint8> eindex2;
+	ac_field<uint8> rmr;
+	
+	ISA_CTOR(a64)
+	{
+		// -----------
+		// C4.4.1
+		// -----------
+		st1.set_decoder(L=0, opcode=2);
+		st1.set_decoder(L=0, opcode=6);
+		st1.set_decoder(L=0, opcode=7);
+		st1.set_decoder(L=0, opcode=10);
+		st1.set_behaviour(st1);
+
+		st2.set_decoder(L=0, opcode=8);
+		st2.set_behaviour(st2);
+
+		st3.set_decoder(L=0, opcode=4);
+		st3.set_behaviour(st3);
+
+		st4.set_decoder(L=0, opcode=0);
+		st4.set_behaviour(st4);
+		
+		ld1.set_decoder(L=1, opcode=2);
+		ld1.set_decoder(L=1, opcode=6);
+		ld1.set_decoder(L=1, opcode=7);
+		ld1.set_decoder(L=1, opcode=10);
+		ld1.set_behaviour(ld1);
+		
+		ld2.set_decoder(L=1, opcode=8);
+		ld2.set_behaviour(ld2);
+		
+		ld3.set_decoder(L=1, opcode=4);
+		ld3.set_behaviour(ld3);
+		
+		ld4.set_decoder(L=1, opcode=0);
+		ld4.set_behaviour(ld4);
+
+		// -----------
+		// C4.4.2
+		// -----------
+		st1pi.set_decoder(L=0, opcode=2);
+		st1pi.set_decoder(L=0, opcode=6);
+		st1pi.set_decoder(L=0, opcode=7);
+		st1pi.set_decoder(L=0, opcode=10);
+		st1pi.set_behaviour(st1pi);
+
+		st2pi.set_decoder(L=0, opcode=8);
+		st2pi.set_behaviour(st2pi);
+
+		st3pi.set_decoder(L=0, opcode=4);
+		st3pi.set_behaviour(st3pi);
+
+		st4pi.set_decoder(L=0, opcode=0);
+		st4pi.set_behaviour(st4pi);
+
+		ld1pi.set_decoder(L=1, opcode=2);
+		ld1pi.set_decoder(L=1, opcode=6);
+		ld1pi.set_decoder(L=1, opcode=7);
+		ld1pi.set_decoder(L=1, opcode=10);
+		
+		ld1pi.set_asm("ld1 { %vreg.%arrg }, [%regx], %regx", rt, arrangement, rn, rm, opcode=7);		// 1
+		ld1pi.set_asm("ld1 { %vreg.%arrg *2 }, [%regx], %regx", rt, arrangement, rn, rm, opcode=10);	// 2
+		ld1pi.set_asm("ld1 { %vreg.%arrg *3 }, [%regx], %regx", rt, arrangement, rn, rm, opcode=6);		// 3
+		ld1pi.set_asm("ld1 { %vreg.%arrg *4 }, [%regx], %regx", rt, arrangement, rn, rm, opcode=2);		// 4
+		
+		ld1pi.set_asm("ld1 { %vreg.%arrg }, [%regx], #8", rt, arrangement, rn, Q=0, rm=31, opcode=7);		// 1
+		ld1pi.set_asm("ld1 { %vreg.%arrg }, [%regx], #16", rt, arrangement, rn, Q=1, rm=31, opcode=7);		// 1
+		ld1pi.set_asm("ld1 { %vreg.%arrg *2 }, [%regx], #16", rt, arrangement, rn, Q=0, rm=31, opcode=10);	// 2
+		ld1pi.set_asm("ld1 { %vreg.%arrg *2 }, [%regx], #32", rt, arrangement, rn, Q=1, rm=31, opcode=10);	// 2
+		ld1pi.set_asm("ld1 { %vreg.%arrg *3 }, [%regx], #24", rt, arrangement, rn, Q=0, rm=31, opcode=6);	// 3
+		ld1pi.set_asm("ld1 { %vreg.%arrg *3 }, [%regx], #48", rt, arrangement, rn, Q=1, rm=31, opcode=6);	// 3
+		ld1pi.set_asm("ld1 { %vreg.%arrg *4 }, [%regx], #32", rt, arrangement, rn, Q=0, rm=31, opcode=2);	// 4
+		ld1pi.set_asm("ld1 { %vreg.%arrg *4 }, [%regx], #64", rt, arrangement, rn, Q=1, rm=31, opcode=2);	// 4
+		
+		ld1pi.set_behaviour(ld1pi);
+
+		ld2pi.set_decoder(L=1, opcode=8);
+		ld2pi.set_behaviour(ld2pi);
+
+		ld3pi.set_decoder(L=1, opcode=4);
+		ld3pi.set_behaviour(ld3pi);
+
+		ld4pi.set_decoder(L=1, opcode=0);
+		ld4pi.set_behaviour(ld4pi);
+		
+		// -----------
+		// C4.4.3
+		// -----------
+		ld1r.set_decoder(L=1, R=0, opcode=6, S=0);
+		ld1r.set_asm("ld1r");
+		ld1r.set_behaviour(ld1r);
+		
+		ld1s.set_decoder(L=1, R=0, opcode=0);
+		ld1s.set_decoder(L=1, R=0, opcode=2, size=0);
+		ld1s.set_decoder(L=1, R=0, opcode=2, size=2);
+		ld1s.set_decoder(L=1, R=0, opcode=4, size=0);
+		ld1s.set_decoder(L=1, R=0, opcode=4, S=0, size=1);		
+		ld1s.set_asm("ld1s");
+		ld1s.set_behaviour(ld1s);
+
+		st1s.set_decoder(L=0, R=0, opcode=0);
+		st1s.set_decoder(L=0, R=0, opcode=2, size=0);
+		st1s.set_decoder(L=0, R=0, opcode=2, size=2);
+		st1s.set_decoder(L=0, R=0, opcode=4, size=0);
+		st1s.set_decoder(L=0, R=0, opcode=4, S=0, size=1);		
+		st1s.set_asm("st1s");
+		st1s.set_behaviour(st1s);
+		
+		// -----------
+		// C4.4.4
+		// -----------
+		st1spi.set_decoder(L=0, R=0, opcode=0);	// 8-bit roff
+		st1spi.set_decoder(L=0, R=0, opcode=2, size=0); // 16-bit roff
+		st1spi.set_decoder(L=0, R=0, opcode=2, size=2); // 16-bit roff
+		st1spi.set_decoder(L=0, R=0, opcode=4, size=0); // 32-bit roff
+		st1spi.set_decoder(L=0, R=0, opcode=4, S=0, size=1); // 64-bit roff
+		st1spi.set_asm("st1spi");
+		st1spi.set_behaviour(st1spi);
+		
+		// -----------
+		// C4.6.1
+		// -----------
+		saddlv.set_decoder(U=0, opcode=3);
+		saddlv.set_behaviour(saddlv);
+		
+		smaxv.set_decoder(U=0, opcode=10);
+		smaxv.set_behaviour(smaxv);
+		
+		sminv.set_decoder(U=0, opcode=26);
+		sminv.set_behaviour(sminv);
+		
+		addv.set_decoder(U=0, opcode=27);
+		addv.set_asm("addv %breg, %vreg.%arrg", rd, rn, arrangement, size=0);
+		addv.set_asm("addv %hreg, %vreg.%arrg", rd, rn, arrangement, size=1);
+		addv.set_asm("addv %sreg, %vreg.%arrg", rd, rn, arrangement, size=2);
+		addv.set_behaviour(addv);
+		
+		uaddlv.set_decoder(U=1, opcode=3);
+		uaddlv.set_behaviour(uaddlv);
+		
+		umaxv.set_decoder(U=1, opcode=10);
+		umaxv.set_behaviour(umaxv);
+		
+		uminv.set_decoder(U=1, opcode=26);
+		uminv.set_behaviour(uminv);
+		
+		fmaxnmv.set_decoder(U=1, size=0, opcode=12);
+		fmaxnmv.set_decoder(U=1, size=1, opcode=12);
+		fmaxnmv.set_behaviour(fmaxnmv);
+		
+		fmaxv.set_decoder(U=1, size=0, opcode=15);
+		fmaxv.set_decoder(U=1, size=1, opcode=15);
+		fmaxv.set_behaviour(fmaxv);
+		
+		fminnmv.set_decoder(U=1, size=2, opcode=12);
+		fminnmv.set_decoder(U=1, size=3, opcode=12);
+		fminnmv.set_behaviour(fminnmv);
+		
+		fminv.set_decoder(U=1, size=2, opcode=15);
+		fminv.set_decoder(U=1, size=3, opcode=15);
+		fminv.set_behaviour(fminv);
+		
+		// -----------
+		// C4.6.2
+		// -----------
+		
+		dup_elem.set_decoder(op=0, imm4=0);
+		dup_elem.set_behaviour(dup_elem);
+		
+		dup_gen.set_decoder(op=0, imm4=1);
+		dup_gen.set_asm("dup %vreg.%arrg, %regw", rd, arrangement, rn, width=32);
+		dup_gen.set_asm("dup %vreg.%arrg, %regx", rd, arrangement, rn, width=64);
+		
+		dup_gen.set_behaviour(dup_gen);
+		
+		smov.set_decoder(Q=0, op=0, imm4=5);
+		smov.set_decoder(Q=1, op=0, imm4=5);
+		smov.set_behaviour(smov);
+
+		umov.set_decoder(Q=0, op=0, imm4=7);
+		umov.set_decoder(Q=1, op=0, imm5=8, imm4=7);
+		umov.set_decoder(Q=1, op=0, imm5=24, imm4=7);
+		umov.set_asm("umov %regw, ", rd, width=32);
+		umov.set_asm("umov %regx, ", rd, width=64);
+		umov.set_behaviour(umov);
+		
+		ins_gen.set_decoder(Q=1, op=0, imm4=3);
+		ins_gen.set_behaviour(ins_gen);
+
+		ins_elem.set_decoder(Q=1, op=1);
+		ins_elem.set_behaviour(ins_elem);
+
+		// -----------
+		// C4.6.4
+		// -----------
+		movi.set_decoder(op=0, cmode=0xe, o2=0);	// 8-bit
+		movi.set_decoder(op=0, cmode=0x8, o2=0);	// 16-bit shifted imm
+		movi.set_decoder(op=0, cmode=0xa, o2=0);	// 16-bit shifted imm
+		movi.set_decoder(op=0, cmode=0x0, o2=0);	// 32-bit shifted imm
+		movi.set_decoder(op=0, cmode=0x2, o2=0);	// 32-bit shifted imm
+		movi.set_decoder(op=0, cmode=0x4, o2=0);	// 32-bit shifted imm
+		movi.set_decoder(op=0, cmode=0x6, o2=0);	// 32-bit shifted imm
+		movi.set_decoder(op=0, cmode=0xc, o2=0);	// 32-bit shifting ones
+		movi.set_decoder(op=0, cmode=0xd, o2=0);	// 32-bit shifting ones
+		movi.set_decoder(Q=0, op=1, cmode=0xe);		// 64-bit scalar
+		movi.set_decoder(Q=1, op=1, cmode=0xe);		// 64-bit vector
+		
+		movi.set_asm("movi %vreg.8b, #%imm", rd, immu64, Q=0, op=0, cmode=0xe);
+		movi.set_asm("movi %vreg.16b, #%imm", rd, immu64, Q=1, op=0, cmode=0xe);
+		
+		movi.set_asm("movi %dreg, #%imm", rd, immu64, Q=0, op=1, cmode=0xe);
+		movi.set_behaviour(movi);
+		
+		mvni.set_decoder(op=1, cmode=0x0, o2=0);	// 32-bit shifted imm
+		mvni.set_decoder(op=1, cmode=0x2, o2=0);	// 32-bit shifted imm
+		mvni.set_decoder(op=1, cmode=0x4, o2=0);	// 32-bit shifted imm
+		mvni.set_decoder(op=1, cmode=0x6, o2=0);	// 32-bit shifted imm
+		
+		mvni.set_decoder(op=1, cmode=0x8, o2=0);	// 16-bit shifted imm
+		mvni.set_decoder(op=1, cmode=0xa, o2=0);	// 16-bit shifted imm
+		
+		mvni.set_decoder(op=1, cmode=0xc, o2=0);	// 32-bit shifting ones
+		mvni.set_decoder(op=1, cmode=0xd, o2=0);	// 32-bit shifting ones
+		
+		mvni.set_behaviour(mvni);
+		
+		bici.set_decoder(op=1, cmode=1, o2=0);		// 32-bit shifted imm
+		bici.set_decoder(op=1, cmode=3, o2=0);
+		bici.set_decoder(op=1, cmode=5, o2=0);
+		bici.set_decoder(op=1, cmode=7, o2=0);
+
+		bici.set_decoder(op=1, cmode=9, o2=0);		// 16-bit shifted imm
+		bici.set_decoder(op=1, cmode=11, o2=0);
+		
+		bici.set_behaviour(bici);
+		
+		fmov_simd.set_decoder(op=0, cmode=15, o2=0);
+		fmov_simd.set_decoder(Q=1, op=1, cmode=15, o2=0);
+		fmov_simd.set_asm("fmov %vreg.2s, #%imm", rd, immu64, op=0, Q=0);
+		fmov_simd.set_asm("fmov %vreg.4s, #%imm", rd, immu64, op=0, Q=1);
+		fmov_simd.set_asm("fmov %vreg.2d, #%imm", rd, immu64, op=1, Q=1);
+		fmov_simd.set_behaviour(fmov_simd);
+		
+		// -----------
+		// C4.6.5
+		// -----------
+		uzp1.set_decoder(opcode=1);
+		uzp1.set_asm("uzp1 %vreg.%arrg, %vreg.%arrg, %vreg.%arrg", rd, arrangement, rn, arrangement, rm, arrangement);
+		uzp1.set_behaviour(uzp1);
+
+		uzp2.set_decoder(opcode=5);
+		uzp2.set_asm("uzp2 %vreg.%arrg, %vreg.%arrg, %vreg.%arrg", rd, arrangement, rn, arrangement, rm, arrangement);
+		uzp2.set_behaviour(uzp2);
+
+		// -----------
+		// C4.6.7
+		// -----------
+		addp_scalar.set_decoder(U=0, opcode=27, size=3);
+		addp_scalar.set_asm("addp %dreg, %vreg.2d", rd, rn);
+		addp_scalar.set_behaviour(addp_scalar);
+
+		// -----------
+		// C4.6.8 / C4.6.13
+		// -----------
+		sshr.set_decoder(Q=1, U=0, immh!=0, opcode=0, SCALAR=1);
+		sshr.set_decoder(U=0, immh!=0, opcode=0, SCALAR=0);
+		sshr.set_asm("sshr %dreg, %dreg, #%imm", rd, rn, shift_amount, SCALAR=1);
+		sshr.set_asm("sshr %vreg.%arrg, %vreg.%arrg, #%imm", rd, arrangement, rn, arrangement, shift_amount, SCALAR=0);
+		sshr.set_behaviour(sshr);
+
+		ushr.set_decoder(Q=1, U=1, immh!=0, opcode=0, SCALAR=1);
+		ushr.set_decoder(U=1, immh!=0, opcode=0, SCALAR=0);
+		ushr.set_asm("ushr %dreg, %dreg, #%imm", rd, rn, shift_amount, SCALAR=1);
+		ushr.set_asm("ushr %vreg.%arrg, %vreg.%arrg, #%imm", rd, arrangement, rn, arrangement, shift_amount, SCALAR=0);
+		ushr.set_behaviour(ushr);
+
+		shl_simd.set_decoder(Q=1, U=0, immh!=0, opcode=10, SCALAR=1);
+		shl_simd.set_decoder(U=0, immh!=0, opcode=10, SCALAR=0);
+		shl_simd.set_asm("shl %dreg, %dreg, #%imm", rd, rn, shift_amount, SCALAR=1);
+		shl_simd.set_asm("shl %vreg.%arrg, %vreg.%arrg, #%imm", rd, arrangement, rn, arrangement, shift_amount, SCALAR=0);
+		shl_simd.set_behaviour(shl_simd);
+		
+		sshll.set_decoder(U=0, opcode=20);
+		sshll.set_asm("sshll %vreg.ARRG, %vreg.%arrg, #%imm", rd, rn, arrangement, shift_amount, Q=0);
+		sshll.set_asm("sshll2 %vreg.ARRG, %vreg.%arrg, #%imm", rd, rn, arrangement, shift_amount, Q=1);
+		sshll.set_behaviour(sshll);
+
+		ushll.set_decoder(U=1, opcode=20);
+		ushll.set_asm("ushll %vreg.ARRG, %vreg.%arrg, #%imm", rd, rn, arrangement, shift_amount, Q=0);
+		ushll.set_asm("ushll2 %vreg.ARRG, %vreg.%arrg, #%imm", rd, rn, arrangement, shift_amount, Q=1);
+		ushll.set_behaviour(ushll);
+		
+		// -----------
+		// C4.6.13
+		// -----------
+		tbl.set_decoder(op=0);
+		tbl.set_behaviour(tbl);
+
+		tbx.set_decoder(op=1);
+		tbx.set_behaviour(tbx);
+		
+		// -----------
+		// C4.6.15
+		// -----------
+		pmull.set_decoder(U=0, SCALAR=0, opcode=14);
+		pmull.set_asm("pmull %vreg, %vreg, %vreg", rd, rn, rm, Q=0);
+		pmull.set_asm("pmull2 %vreg, %vreg, %vreg", rd, rn, rm, Q=1);
+		pmull.set_behaviour(pmull);
+		
+		smull.set_decoder(U=0, SCALAR=0, opcode=12);
+		smull.set_asm("smull %vreg, %vreg, %vreg", rd, rn, rm, Q=0);
+		smull.set_asm("smull2 %vreg, %vreg, %vreg", rd, rn, rm, Q=1);
+		smull.set_behaviour(smull);
+
+		umull.set_decoder(U=1, SCALAR=0, opcode=12);
+		umull.set_asm("umull %vreg, %vreg, %vreg", rd, rn, rm, Q=0);
+		umull.set_asm("umull2 %vreg, %vreg, %vreg", rd, rn, rm, Q=1);
+		umull.set_behaviour(umull);
+
+		saddl.set_decoder(U=0, SCALAR=0, opcode=0);
+		saddl.set_behaviour(saddl);
+		
+		uaddl.set_decoder(U=1, SCALAR=0, opcode=0);
+		uaddl.set_behaviour(uaddl);
+		
+		saddw.set_decoder(U=0, SCALAR=0, opcode=1);
+		saddw.set_behaviour(saddw);
+		
+		uaddw.set_decoder(U=1, SCALAR=0, opcode=1);
+		uaddw.set_behaviour(uaddw);
+		
+		ssubl.set_decoder(U=0, SCALAR=0, opcode=2);
+		ssubl.set_behaviour(ssubl);
+		
+		usubl.set_decoder(U=1, SCALAR=0, opcode=2);
+		usubl.set_behaviour(usubl);
+		
+		ssubw.set_decoder(U=0, SCALAR=0, opcode=3);
+		ssubw.set_asm("ssubw %vreg, %vreg, %vreg", rd, rn, rm, Q=0);
+		ssubw.set_asm("ssubw2 %vreg, %vreg, %vreg", rd, rn, rm, Q=1);
+		ssubw.set_behaviour(ssubw);
+
+		usubw.set_decoder(U=1, SCALAR=0, opcode=3);
+		usubw.set_asm("usubw %vreg, %vreg, %vreg", rd, rn, rm, Q=0);
+		usubw.set_asm("usubw2 %vreg, %vreg, %vreg", rd, rn, rm, Q=1);
+		usubw.set_behaviour(usubw);
+		
+		
+		// -----------
+		// C4.6.10 / C4.6.16
+		// -----------
+		add_vector.set_decoder(U=0, opcode=16, SCALAR=0);
+		add_vector.set_decoder(U=0, opcode=16, SCALAR=1, size=3);
+		add_vector.set_asm("add %vreg.%arrg, %vreg.%arrg, %vreg.%arrg", rd, arrangement, rn, arrangement, rm, arrangement, SCALAR=0);
+		add_vector.set_asm("add %dreg, %dreg, %dreg", rd, rn, rm, SCALAR=1);
+		add_vector.set_behaviour(add_vector);
+
+		sub_vector.set_decoder(U=1, opcode=16, SCALAR=0);
+		sub_vector.set_decoder(U=1, opcode=16, SCALAR=1, size=3);
+		sub_vector.set_asm("sub %vreg.%arrg, %vreg.%arrg, %vreg.%arrg", rd, arrangement, rn, arrangement, rm, arrangement, SCALAR=0);
+		sub_vector.set_asm("sub %dreg, %dreg, %dreg", rd, rn, rm, SCALAR=1);
+		sub_vector.set_behaviour(sub_vector);
+
+		addp_vector.set_decoder(U=0, SCALAR=0, opcode=23);
+		addp_vector.set_asm("addp %vreg.%arrg, %vreg.%arrg, %vreg.%arrg", rd, arrangement, rn, arrangement, rm, arrangement);
+		addp_vector.set_behaviour(addp_vector);
+
+		and_vector.set_decoder(U=0, SCALAR=0, opcode=3, size=0);
+		and_vector.set_asm("and %vreg.8b, %vreg.8b, %vreg.8b", rd, rn, rm, Q=0);
+		and_vector.set_asm("and %vreg.16b, %vreg.16b, %vreg.16b", rd, rn, rm, Q=1);
+		and_vector.set_behaviour(and_vector);
+
+		orr_vector.set_decoder(U=0, SCALAR=0, opcode=3, size=2);
+		orr_vector.set_asm("orr %vreg.8b, %vreg.8b, %vreg.8b", rd, rn, rm, Q=0);
+		orr_vector.set_asm("orr %vreg.16b, %vreg.16b, %vreg.16b", rd, rn, rm, Q=1);
+		orr_vector.set_asm("mov %vreg.8b, %vreg.8b", rd, rn, rn=rm, Q=0);
+		orr_vector.set_asm("mov %vreg.16b, %vreg.16b", rd, rn, rn=rm, Q=1);
+		orr_vector.set_behaviour(orr_vector);
+		
+		eor_vector.set_decoder(U=1, SCALAR=0, opcode=3, size=0);
+		eor_vector.set_asm("eor %vreg.8b, %vreg.8b, %vreg.8b", rd, rn, rm, Q=0);
+		eor_vector.set_asm("eor %vreg.16b, %vreg.16b, %vreg.16b", rd, rn, rm, Q=1);
+		eor_vector.set_behaviour(eor_vector);
+
+		orn_vector.set_decoder(U=0, SCALAR=0, opcode=3, size=3);
+		orn_vector.set_asm("orn %vreg.8b, %vreg.8b, %vreg.8b", rd, rn, rm, Q=0);
+		orn_vector.set_asm("orn %vreg.16b, %vreg.16b, %vreg.16b", rd, rn, rm, Q=1);
+		orn_vector.set_behaviour(orn_vector);
+
+		bic_vector.set_decoder(U=0, SCALAR=0, opcode=3, size=1);
+		bic_vector.set_asm("bic %vreg.8b, %vreg.8b, %vreg.8b", rd, rn, rm, Q=0);
+		bic_vector.set_asm("bic %vreg.16b, %vreg.16b, %vreg.16b", rd, rn, rm, Q=1);
+		bic_vector.set_behaviour(bic_vector);
+
+		mul_vector.set_decoder(U=0, SCALAR=0, opcode=19, size=0);
+		mul_vector.set_decoder(U=0, SCALAR=0, opcode=19, size=1);
+		mul_vector.set_decoder(U=0, SCALAR=0, opcode=19, size=2);
+		mul_vector.set_asm("mul %vreg.%arrg, %vreg.%arrg, %vreg.%arrg", rd, arrangement, rn, arrangement, rm, arrangement);
+		mul_vector.set_behaviour(mul_vector);
+
+		mla_vector.set_decoder(U=0, SCALAR=0, opcode=18, size=0);
+		mla_vector.set_decoder(U=0, SCALAR=0, opcode=18, size=1);
+		mla_vector.set_decoder(U=0, SCALAR=0, opcode=18, size=2);
+		mla_vector.set_asm("mla %vreg.%arrg, %vreg.%arrg, %vreg.%arrg", rd, arrangement, rn, arrangement, rm, arrangement);
+		mla_vector.set_behaviour(mla_vector);
+		
+		fsub_vector.set_decoder(U=0, SCALAR=0, opcode=26, size=2);
+		fsub_vector.set_decoder(U=0, SCALAR=0, opcode=26, size=3, Q=1);
+		fsub_vector.set_asm("fsub %vreg.2s, %vreg.2s, %vreg.2s", rd, rn, rm, Q=0, size=2);
+		fsub_vector.set_asm("fsub %vreg.4s, %vreg.4s, %vreg.4s", rd, rn, rm, Q=1, size=2);
+		fsub_vector.set_asm("fsub %vreg.2d, %vreg.2d, %vreg.2d", rd, rn, rm, Q=1, size=3);
+		fsub_vector.set_behaviour(fsub_vector);
+		
+		fmul_vector.set_decoder(U=1, SCALAR=0, opcode=27, size=0);
+		fmul_vector.set_decoder(U=1, SCALAR=0, opcode=27, size=1, Q=1);
+		fmul_vector.set_asm("fmul %vreg.2s, %vreg.2s, %vreg.2s", rd, rn, rm, Q=0, size=0);
+		fmul_vector.set_asm("fmul %vreg.4s, %vreg.4s, %vreg.4s", rd, rn, rm, Q=1, size=0);
+		fmul_vector.set_asm("fmul %vreg.2d, %vreg.2d, %vreg.2d", rd, rn, rm, Q=1, size=1);
+		fmul_vector.set_behaviour(fmul_vector);
+		
+		cmeq_reg.set_decoder(Q=1, U=1, opcode=17, SCALAR=1, size=3);
+		cmeq_reg.set_decoder(U=1, opcode=17, SCALAR=0);
+		cmeq_reg.set_asm("cmeq %dreg, %dreg, %dreg", rd, rn, rm, Q=1, SCALAR=1, size=3);
+		cmeq_reg.set_asm("cmeq %vreg.%arrg, %vreg.%arrg, %vreg.%arrg", rd, arrangement, rn, arrangement, rm, arrangement, SCALAR=0);
+		cmeq_reg.set_behaviour(cmeq_reg);
+
+		cmhi_reg.set_decoder(Q=1, U=1, opcode=6, SCALAR=1, size=3);
+		cmhi_reg.set_decoder(U=1, opcode=6, SCALAR=0);
+		cmhi_reg.set_asm("cmhi %dreg, %dreg, %dreg", rd, rn, rm, Q=1, SCALAR=1, size=3);
+		cmhi_reg.set_asm("cmhi %vreg.%arrg, %vreg.%arrg, %vreg.%arrg", rd, arrangement, rn, arrangement, rm, arrangement, SCALAR=0);
+		cmhi_reg.set_behaviour(cmhi_reg);
+		
+		cmtst.set_decoder(Q=1, U=0, opcode=17, SCALAR=1, size=3);
+		cmtst.set_decoder(U=0, opcode=17, SCALAR=0);
+		cmtst.set_asm("cmtst %dreg, %dreg, %dreg", rd, rn, rm, Q=1, SCALAR=1, size=3);
+		cmtst.set_asm("cmtst %vreg.%arrg, %vreg.%arrg, %vreg.%arrg", rd, arrangement, rn, arrangement, rm, arrangement, SCALAR=0);
+		cmtst.set_behaviour(cmtst);
+				
+		fabd.set_decoder(Q=1, U=1, opcode=0x1a, SCALAR=1, size=2);
+		fabd.set_decoder(Q=1, U=1, opcode=0x1a, SCALAR=1, size=3);
+		fabd.set_decoder(U=1, opcode=0x1a, SCALAR=0, size=2);
+		fabd.set_decoder(U=1, opcode=0x1a, SCALAR=0, size=3);
+		fabd.set_asm("fabd %sreg, %sreg, %sreg", rd, rn, rm, Q=1, SCALAR=1, size=2);
+		fabd.set_asm("fabd %dreg, %dreg, %dreg", rd, rn, rm, Q=1, SCALAR=1, size=3);
+		fabd.set_asm("fabd %vreg.%arrg, %vreg.%arrg, %vreg.%arrg", rd, arrangement, rn, arrangement, rm, arrangement, SCALAR=0);
+		fabd.set_behaviour(fabd);
+		
+		bsl.set_decoder(U=1, opcode=0x3, SCALAR=0, size=1);
+		bsl.set_asm("bsl %vreg.%arrg, %vreg.%arrg, %vreg.%arrg", rd, arrangement, rn, arrangement, rm, arrangement);
+		bsl.set_behaviour(bsl);
+
+		bit.set_decoder(U=1, opcode=0x3, SCALAR=0, size=2);
+		bit.set_asm("bit %vreg.%arrg, %vreg.%arrg, %vreg.%arrg", rd, arrangement, rn, arrangement, rm, arrangement);
+		bit.set_behaviour(bit);
+
+		bif.set_decoder(U=1, opcode=0x3, SCALAR=0, size=3);
+		bif.set_asm("bif %vreg.%arrg, %vreg.%arrg, %vreg.%arrg", rd, arrangement, rn, arrangement, rm, arrangement);
+		bif.set_behaviour(bif);
+		
+		smax.set_decoder(U=0, opcode=12);
+		smax.set_asm("smax %vreg.%arrg, %vreg.%arrg, %vreg.%arrg,", rd, arrangement, rn, arrangement, rm, arrangement);
+		smax.set_behaviour(smax);
+
+		smin.set_decoder(U=0, opcode=13);
+		smin.set_asm("smin %vreg.%arrg, %vreg.%arrg, %vreg.%arrg,", rd, arrangement, rn, arrangement, rm, arrangement);
+		smin.set_behaviour(smin);
+
+		ushl.set_decoder(U=1, opcode=8);
+		ushl.set_asm("ushl %vreg.%arrg, %vreg.%arrg, %vreg.%arrg,", rd, arrangement, rn, arrangement, rm, arrangement);
+		ushl.set_behaviour(ushl);
+				
+		sshl.set_decoder(U=0, opcode=8);
+		sshl.set_asm("sshl %vreg.%arrg, %vreg.%arrg, %vreg.%arrg,", rd, arrangement, rn, arrangement, rm, arrangement);
+		sshl.set_behaviour(sshl);
+				
+		// -----------
+		// C4.6.11 / C4.6.17
+		// -----------
+		cmeq_zero.set_decoder(Q=1, U=0, opcode=9, SCALAR=1, size=3);
+		cmeq_zero.set_decoder(U=0, opcode=9, SCALAR=0);
+		cmeq_zero.set_asm("cmeq %dreg, %dreg, #0", rd, rn, rm, Q=1, SCALAR=1, size=3);
+		cmeq_zero.set_asm("cmeq %vreg.%arrg, %vreg.%arrg, #0", rd, arrangement, rn, arrangement, rm, arrangement, SCALAR=0);
+		cmeq_zero.set_behaviour(cmeq_zero);
+
+		cmge_zero.set_decoder(Q=1, opcode=8, SCALAR=1, size=3);
+		cmge_zero.set_decoder(opcode=8, SCALAR=0);
+		cmge_zero.set_asm("cmge %dreg, %dreg, #0", rd, rn, rm, Q=1, SCALAR=1, size=3, U=1);
+		cmge_zero.set_asm("cmge %vreg.%arrg, %vreg.%arrg, #0", rd, arrangement, rn, arrangement, rm, arrangement, SCALAR=0, U=1);
+		cmge_zero.set_asm("cmgt %dreg, %dreg, #0", rd, rn, rm, Q=1, SCALAR=1, size=3, U=0);
+		cmge_zero.set_asm("cmgt %vreg.%arrg, %vreg.%arrg, #0", rd, arrangement, rn, arrangement, rm, arrangement, SCALAR=0, U=0);
+		cmge_zero.set_behaviour(cmge_zero);
+
+		cmlt_zero.set_decoder(Q=1, opcode=10, SCALAR=1, size=3, U=0);
+		cmlt_zero.set_decoder(Q=1, opcode=9, SCALAR=1, size=3, U=1);
+		cmlt_zero.set_decoder(opcode=10, SCALAR=0, U=0);
+		cmlt_zero.set_decoder(opcode=9, SCALAR=0, U=1);
+		cmlt_zero.set_asm("cmle %dreg, %dreg, #0", rd, rn, rm, Q=1, SCALAR=1, size=3, U=1);
+		cmlt_zero.set_asm("cmle %vreg.%arrg, %vreg.%arrg, #0", rd, arrangement, rn, arrangement, rm, arrangement, SCALAR=0, U=1);
+		cmlt_zero.set_asm("cmlt %dreg, %dreg, #0", rd, rn, rm, Q=1, SCALAR=1, size=3, U=0);
+		cmlt_zero.set_asm("cmlt %vreg.%arrg, %vreg.%arrg, #0", rd, arrangement, rn, arrangement, rm, arrangement, SCALAR=0, U=0);
+		cmlt_zero.set_behaviour(cmlt_zero);
+
+		fcmgt_zero.set_decoder(U=0, Q=1, opcode=12, SCALAR=1, size=2);
+		fcmgt_zero.set_decoder(U=0, Q=1, opcode=12, SCALAR=1, size=3);
+		fcmgt_zero.set_asm("fcmgt %sreg, %sreg, #0", rd, rn, SCALAR=1, size=2);
+		fcmgt_zero.set_asm("fcmgt %dreg, %dreg, #0", rd, rn, SCALAR=1, size=3);
+		fcmgt_zero.set_behaviour(fcmgt_zero);
+
+		cnt.set_decoder(U=0, opcode=5);
+		cnt.set_decoder(U=0, opcode=5, SCALAR=0);
+		
+		cnt.set_asm("cnt %vreg.%arrg, %vreg.%arrg", rd, arrangement, rn, arrangement, SCALAR=0);
+		cnt.set_behaviour(cnt);
+		
+		xtn.set_decoder(U=0, opcode=18);
+		xtn.set_asm("xtn %vreg.%arrg, %vreg. XX", rd, arrangement, rn, Q=0);
+		xtn.set_asm("xtn2 %vreg.%arrg, %vreg. XX", rd, arrangement, rn, Q=1);
+		xtn.set_behaviour(xtn);
+		
+		scvtf_simd.set_decoder(Q=1, SCALAR=1, U=0, size=0, opcode=29);
+		scvtf_simd.set_decoder(Q=1, SCALAR=1, U=0, size=1, opcode=29);
+		scvtf_simd.set_decoder(SCALAR=0, U=0, size=0, opcode=29);
+		scvtf_simd.set_decoder(SCALAR=0, U=0, size=1, opcode=29);
+		
+		scvtf_simd.set_asm("scvtf %sreg, %sreg", rd, rn, SCALAR=1, size=0);
+		scvtf_simd.set_asm("scvtf %dreg, %dreg", rd, rn, SCALAR=1, size=1);
+		scvtf_simd.set_asm("scvtf %vreg.%arrg, %vreg.%arrg", rd, arrangement, rn, arrangement, SCALAR=0);
+		
+		scvtf_simd.set_behaviour(scvtf_simd);
+		
+		ucvtf_simd.set_decoder(Q=1, SCALAR=1, U=1, size=0, opcode=29);
+		ucvtf_simd.set_decoder(Q=1, SCALAR=1, U=1, size=1, opcode=29);
+		ucvtf_simd.set_decoder(SCALAR=0, U=1, size=0, opcode=29);
+		ucvtf_simd.set_decoder(SCALAR=0, U=1, size=1, opcode=29);
+		
+		ucvtf_simd.set_asm("ucvtf %sreg, %sreg", rd, rn, SCALAR=1, size=0);
+		ucvtf_simd.set_asm("ucvtf %dreg, %dreg", rd, rn, SCALAR=1, size=1);
+		ucvtf_simd.set_asm("ucvtf %vreg.%arrg, %vreg.%arrg", rd, arrangement, rn, arrangement, SCALAR=0);
+		
+		ucvtf_simd.set_behaviour(ucvtf_simd);
+		
+		rev32_simd.set_decoder(U=1, SCALAR=0, opcode=0);
+		rev32_simd.set_asm("rev32 %vreg.%arrg, %vreg.%arrg", rd, arrangement, rn, arrangement);
+		rev32_simd.set_behaviour(rev32_simd);
+
+		rev64_simd.set_decoder(U=0, SCALAR=0, opcode=0);
+		rev64_simd.set_asm("rev64 %vreg.%arrg, %vreg.%arrg", rd, arrangement, rn, arrangement);
+		rev64_simd.set_behaviour(rev64_simd);
+		
+		fcvtzs_simd.set_decoder(U=0, Q=1, SCALAR=1, opcode=27);
+		fcvtzs_simd.set_decoder(U=1, Q=1, SCALAR=1, opcode=27);
+		fcvtzs_simd.set_decoder(U=0, SCALAR=0, opcode=27, size=2);
+		fcvtzs_simd.set_decoder(U=0, SCALAR=0, opcode=27, size=3);
+		fcvtzs_simd.set_asm("fcvtzs %sreg, %sreg", rd, rn, size=2, U=0);
+		fcvtzs_simd.set_asm("fcvtzs %dreg, %dreg", rd, rn, size=3, U=0);
+		fcvtzs_simd.set_asm("fcvtzu %sreg, %sreg", rd, rn, size=2, U=1);
+		fcvtzs_simd.set_asm("fcvtzu %dreg, %dreg", rd, rn, size=3, U=1);
+		fcvtzs_simd.set_behaviour(fcvtzs_simd);
+
+		fcvtas_simd.set_decoder(U=0, Q=1, SCALAR=1, opcode=28);
+		fcvtas_simd.set_asm("fcvtas %sreg, %sreg", rd, rn, size=0);
+		fcvtas_simd.set_asm("fcvtas %dreg, %dreg", rd, rn, size=1);
+		fcvtas_simd.set_behaviour(fcvtas_simd);
+		
+		neg_simd.set_decoder(U=1, Q=1, SCALAR=1, size=3, opcode=11);
+		neg_simd.set_decoder(U=1, SCALAR=0, opcode=11);
+		neg_simd.set_asm("neg %dreg, %dreg", rd, rn, SCALAR=1);
+		neg_simd.set_asm("neg %vreg.%arrg, %vreg.%arrg", rd, arrangement, rn, arrangement, SCALAR=0);
+		neg_simd.set_behaviour(neg_simd);
+
+		not_simd.set_decoder(U=1, SCALAR=0, size=0, opcode=5);
+		not_simd.set_asm("not %vreg.%arrg, %vreg.%arrg", rd, arrangement, rn, arrangement);
+		not_simd.set_behaviour(not_simd);
+		
+		shll.set_decoder(U=1, opcode=19);
+		shll.set_asm("shll %vreg ARRG, %vreg.%arrg, #%imm * 8", rd, rn, arrangement, size, Q=0);
+		shll.set_asm("shll2 %vreg ARRG, %vreg.%arrg, #%imm * 8", rd, rn, arrangement, size, Q=1);
+		shll.set_behaviour(shll);
+		
+		uaddlp.set_decoder(U=1, opcode=2, SCALAR=0);
+		uaddlp.set_asm("uaddlp %vreg, %vreg.%arrg", rd, rn, arrangement);
+		uaddlp.set_behaviour(uaddlp);
+
+		uadalp.set_decoder(U=1, opcode=6, SCALAR=0);
+		uadalp.set_asm("uadalp %vreg, %vreg.%arrg", rd, rn, arrangement);
+		uadalp.set_behaviour(uadalp);
+		
+		abs_simd.set_decoder(U=0, opcode=11);
+		abs_simd.set_behaviour(abs_simd);
+
+		// -----------
+		// C4.6.18
+		// -----------
+		mul_idx_vector.set_decoder(U=0, opcode=8);
+		mul_idx_vector.set_asm("mul %vreg ARRG, %vreg ARRG, %vreg ARRG [%imm]", rd, rn, rm, eindex);
+		mul_idx_vector.set_behaviour(mul_idx_vector);
+		
+		// -----------
+		// C4.6.22
+		// -----------
+		fcmpe.set_decoder(M=0, S=0, type=0, op=0, opcode2=0x10);
+		fcmpe.set_decoder(M=0, S=0, type=0, op=0, opcode2=0x18);
+		fcmpe.set_decoder(M=0, S=0, type=1, op=0, opcode2=0x10);
+		fcmpe.set_decoder(M=0, S=0, type=1, op=0, opcode2=0x18);
+
+		fcmpe.set_decoder(M=0, S=0, type=0, op=0, opcode2=0x00);
+		fcmpe.set_decoder(M=0, S=0, type=0, op=0, opcode2=0x08);
+		fcmpe.set_decoder(M=0, S=0, type=1, op=0, opcode2=0x00);
+		fcmpe.set_decoder(M=0, S=0, type=1, op=0, opcode2=0x08);
+		
+		fcmpe.set_asm("fcmpe %sreg, %sreg", rn, rm, type=0, opcode2=0x10);
+		fcmpe.set_asm("fcmpe %sreg, #0.0", rn, type=0, opcode2=0x18);
+		fcmpe.set_asm("fcmpe %dreg, %dreg", rn, rm, type=1, opcode2=0x10);
+		fcmpe.set_asm("fcmpe %dreg, #0.0", rn, type=1, opcode2=0x18);
+
+		fcmpe.set_asm("fcmp %sreg, %sreg", rn, rm, type=0, opcode2=0x0);
+		fcmpe.set_asm("fcmp %sreg, #0.0", rn, type=0, opcode2=0x8);
+		fcmpe.set_asm("fcmp %dreg, %dreg", rn, rm, type=1, opcode2=0x0);
+		fcmpe.set_asm("fcmp %dreg, #0.0", rn, type=1, opcode2=0x8);
+		
+		fcmpe.set_behaviour(fcmpe);
+		
+		// -----------
+		// C4.6.23
+		// -----------
+		fccmpe.set_decoder(M=0, S=0, type=0, op=0);
+		fccmpe.set_decoder(M=0, S=0, type=0, op=1);
+		fccmpe.set_decoder(M=0, S=0, type=1, op=0);
+		fccmpe.set_decoder(M=0, S=0, type=1, op=1);
+		
+		fccmpe.set_asm("fccmp %sreg, %sreg, #%nzcvbits, %cond", rn, rm, nzcv, cond, type=0, op=0);
+		fccmpe.set_asm("fccmp %dreg, %dreg, #%nzcvbits, %cond", rn, rm, nzcv, cond, type=1, op=0);
+		fccmpe.set_asm("fccmpe %sreg, %sreg, #%nzcvbits, %cond", rn, rm, nzcv, cond, type=0, op=1);
+		fccmpe.set_asm("fccmpe %dreg, %dreg, #%nzcvbits, %cond", rn, rm, nzcv, cond, type=1, op=1);
+		
+		fccmpe.set_behaviour(fccmpe);
+		
+		// -----------
+		// C4.6.24
+		// -----------
+		fcsel.set_decoder(M=0, S=0, type=0);
+		fcsel.set_decoder(M=0, S=0, type=1);
+		
+		fcsel.set_asm("fcsel %sreg, %sreg, %sreg, %cond", rd, rn, rm, cond, type=0);
+		fcsel.set_asm("fcsel %dreg, %dreg, %dreg, %cond", rd, rn, rm, cond, type=1);
+		
+		fcsel.set_behaviour(fcsel);
+		
+		// -----------
+		// C4.6.25
+		// -----------
+		fmov.set_decoder(M=0, S=0, type=0, opcode=0);
+		fmov.set_decoder(M=0, S=0, type=1, opcode=0);
+		fmov.set_asm("fmov %sreg, %sreg", rd, rn, type=0);
+		fmov.set_asm("fmov %dreg, %dreg", rd, rn, type=1);
+		fmov.set_behaviour(fmov);
+		
+		fneg.set_decoder(M=0, S=0, type=0, opcode=2);
+		fneg.set_decoder(M=0, S=0, type=1, opcode=2);
+		fneg.set_asm("fneg %sreg, %sreg", rd, rn, type=0);
+		fneg.set_asm("fneg %dreg, %dreg", rd, rn, type=1);
+		fneg.set_behaviour(fneg);
+		
+		fcvt.set_decoder(M=0, S=0, type=3, opcode=4);
+		fcvt.set_decoder(M=0, S=0, type=3, opcode=5);
+		fcvt.set_decoder(M=0, S=0, type=0, opcode=7);
+		fcvt.set_decoder(M=0, S=0, type=0, opcode=5);
+		fcvt.set_decoder(M=0, S=0, type=1, opcode=7);
+		fcvt.set_decoder(M=0, S=0, type=1, opcode=4);
+		
+		fcvt.set_asm("fcvt %sreg, %hreg", rd, rn, type=3, opcode=4);
+		fcvt.set_asm("fcvt %dreg, %hreg", rd, rn, type=3, opcode=5);
+		fcvt.set_asm("fcvt %hreg, %sreg", rd, rn, type=0, opcode=7);
+		fcvt.set_asm("fcvt %dreg, %sreg", rd, rn, type=0, opcode=5);
+		fcvt.set_asm("fcvt %hreg, %dreg", rd, rn, type=1, opcode=7);
+		fcvt.set_asm("fcvt %sreg, %dreg", rd, rn, type=1, opcode=4);
+		
+		fcvt.set_behaviour(fcvt);
+		
+		fabs.set_decoder(M=0, S=0, type=0, opcode=1);
+		fabs.set_decoder(M=0, S=0, type=1, opcode=1);
+		
+		fabs.set_asm("fabs %sreg, %sreg", rd, rn, type=0);
+		fabs.set_asm("fabs %dreg, %dreg", rd, rn, type=1);
+		
+		fabs.set_behaviour(fabs);
+		
+		frintx.set_decoder(M=0, S=0, type=0, opcode=8);
+		frintx.set_decoder(M=0, S=0, type=1, opcode=8);
+		frintx.set_decoder(M=0, S=0, type=0, opcode=9);
+		frintx.set_decoder(M=0, S=0, type=1, opcode=9);
+		frintx.set_decoder(M=0, S=0, type=0, opcode=10);
+		frintx.set_decoder(M=0, S=0, type=1, opcode=10);
+		frintx.set_decoder(M=0, S=0, type=0, opcode=11);
+		frintx.set_decoder(M=0, S=0, type=1, opcode=11);
+		frintx.set_decoder(M=0, S=0, type=0, opcode=12);
+		frintx.set_decoder(M=0, S=0, type=1, opcode=12);
+		frintx.set_decoder(M=0, S=0, type=0, opcode=14);
+		frintx.set_decoder(M=0, S=0, type=1, opcode=14);
+		frintx.set_decoder(M=0, S=0, type=0, opcode=15);
+		frintx.set_decoder(M=0, S=0, type=1, opcode=15);
+		
+		frintx.set_asm("frintn %sreg, %sreg", rd, rn, type=0, opcode=8);
+		frintx.set_asm("frintn %dreg, %dreg", rd, rn, type=1, opcode=8);
+		frintx.set_asm("frintp %sreg, %sreg", rd, rn, type=0, opcode=9);
+		frintx.set_asm("frintp %dreg, %dreg", rd, rn, type=1, opcode=9);
+		frintx.set_asm("frintm %sreg, %sreg", rd, rn, type=0, opcode=10);
+		frintx.set_asm("frintm %dreg, %dreg", rd, rn, type=1, opcode=10);
+		frintx.set_asm("frintz %sreg, %sreg", rd, rn, type=0, opcode=11);
+		frintx.set_asm("frintz %dreg, %dreg", rd, rn, type=1, opcode=11);
+		frintx.set_asm("frinta %sreg, %sreg", rd, rn, type=0, opcode=12);
+		frintx.set_asm("frinta %dreg, %dreg", rd, rn, type=1, opcode=12);
+		frintx.set_asm("frintx %sreg, %sreg", rd, rn, type=0, opcode=14);
+		frintx.set_asm("frintx %dreg, %dreg", rd, rn, type=1, opcode=14);
+		frintx.set_asm("frinti %sreg, %sreg", rd, rn, type=0, opcode=15);
+		frintx.set_asm("frinti %dreg, %dreg", rd, rn, type=1, opcode=15);
+		
+		frintx.set_behaviour(frintx);
+		
+		fsqrt.set_decoder(M=0, S=0, type=0, opcode=3);
+		fsqrt.set_decoder(M=0, S=0, type=1, opcode=3);
+		fsqrt.set_asm("fsqrt %sreg, %sreg", rd, rn, type=0);
+		fsqrt.set_asm("fsqrt %dreg, %dreg", rd, rn, type=1);
+		fsqrt.set_behaviour(fsqrt);
+
+		// -----------
+		// C4.6.26
+		// -----------
+		fadd.set_decoder(M=0, S=0, type=0, opcode=2);
+		fadd.set_decoder(M=0, S=0, type=1, opcode=2);
+		fadd.set_asm("fadd %sreg, %sreg, %sreg", rd, rn, rm, type=0);
+		fadd.set_asm("fadd %dreg, %dreg, %dreg", rd, rn, rm, type=1);
+		fadd.set_behaviour(fadd);
+
+		fsub.set_decoder(M=0, S=0, type=0, opcode=3);
+		fsub.set_decoder(M=0, S=0, type=1, opcode=3);
+		fsub.set_asm("fsub %sreg, %sreg, %sreg", rd, rn, rm, type=0);
+		fsub.set_asm("fsub %dreg, %dreg, %dreg", rd, rn, rm, type=1);
+		fsub.set_behaviour(fsub);
+
+		fmul.set_decoder(M=0, S=0, type=0, opcode=0);
+		fmul.set_decoder(M=0, S=0, type=1, opcode=0);
+		fmul.set_asm("fmul %sreg, %sreg, %sreg", rd, rn, rm, type=0);
+		fmul.set_asm("fmul %dreg, %dreg, %dreg", rd, rn, rm, type=1);
+		fmul.set_behaviour(fmul);
+
+		fnmul.set_decoder(M=0, S=0, type=0, opcode=8);
+		fnmul.set_decoder(M=0, S=0, type=1, opcode=8);
+		fnmul.set_asm("fnmul %sreg, %sreg, %sreg", rd, rn, rm, type=0);
+		fnmul.set_asm("fnmul %dreg, %dreg, %dreg", rd, rn, rm, type=1);
+		fnmul.set_behaviour(fnmul);
+
+		fdiv.set_decoder(M=0, S=0, type=0, opcode=1);
+		fdiv.set_decoder(M=0, S=0, type=1, opcode=1);
+		fdiv.set_asm("fdiv %sreg, %sreg, %sreg", rd, rn, rm, type=0);
+		fdiv.set_asm("fdiv %dreg, %dreg, %dreg", rd, rn, rm, type=1);
+		fdiv.set_behaviour(fdiv);
+
+		// -----------
+		// C4.6.27
+		// -----------
+		fm.set_decoder(M=0, S=0, type=0, o1=0);
+		fm.set_decoder(M=0, S=0, type=1, o1=0);
+		fm.set_asm("fmadd %sreg, %sreg, %sreg, %sreg", rd, rn, rm, ra, type=0, o0=0);
+		fm.set_asm("fmadd %dreg, %dreg, %dreg, %dreg", rd, rn, rm, ra, type=1, o0=0);
+		fm.set_asm("fmsub %sreg, %sreg, %sreg, %sreg", rd, rn, rm, ra, type=0, o0=1);
+		fm.set_asm("fmsub %dreg, %dreg, %dreg, %dreg", rd, rn, rm, ra, type=1, o0=1);
+		fm.set_behaviour(fm);
+
+		fnm.set_decoder(M=0, S=0, type=0, o1=1);
+		fnm.set_decoder(M=0, S=0, type=1, o1=1);
+		fnm.set_asm("fnmadd %sreg, %sreg, %sreg, %sreg", rd, rn, rm, ra, type=0, o0=0);
+		fnm.set_asm("fnmadd %dreg, %dreg, %dreg, %dreg", rd, rn, rm, ra, type=1, o0=0);
+		fnm.set_asm("fnmsub %sreg, %sreg, %sreg, %sreg", rd, rn, rm, ra, type=0, o0=1);
+		fnm.set_asm("fnmsub %dreg, %dreg, %dreg, %dreg", rd, rn, rm, ra, type=1, o0=1);
+		fnm.set_behaviour(fnm);
+
+		// -----------
+		// C4.6.28
+		// -----------
+		fmovi.set_decoder(M=0, S=0, type=0, imm5=0);
+		fmovi.set_decoder(M=0, S=0, type=1, imm5=0);
+		fmovi.set_asm("fmov %sreg, %imm", rd, immu64, type=0);
+		fmovi.set_asm("fmov %dreg, %imm", rd, immu64, type=1);
+		fmovi.set_behaviour(fmovi);
+
+		// -----------
+		// C4.6.29
+		// -----------
+		fcvtz_fxp.set_decoder(sf=0, S=0, type=0, rmode=3, opcode=0);	// f32 -> s32
+		fcvtz_fxp.set_decoder(sf=0, S=0, type=1, rmode=3, opcode=0);	// f64 -> s32
+		fcvtz_fxp.set_decoder(sf=1, S=0, type=0, rmode=3, opcode=0);	// f32 -> s64
+		fcvtz_fxp.set_decoder(sf=1, S=0, type=1, rmode=3, opcode=0);	// f64 -> s64
+		fcvtz_fxp.set_decoder(sf=0, S=0, type=0, rmode=3, opcode=1);	// f32 -> u32
+		fcvtz_fxp.set_decoder(sf=0, S=0, type=1, rmode=3, opcode=1);	// f64 -> u32
+		fcvtz_fxp.set_decoder(sf=1, S=0, type=0, rmode=3, opcode=1);	// f32 -> u64
+		fcvtz_fxp.set_decoder(sf=1, S=0, type=1, rmode=3, opcode=1);	// f64 -> u64
+		
+		fcvtz_fxp.set_asm("fcvtzs %regw, %sreg, %imm", rd, rn, immu64, sf=0, type=0, opcode=0);
+		fcvtz_fxp.set_asm("fcvtzs %regw, %dreg, %imm", rd, rn, immu64, sf=0, type=1, opcode=0);
+		fcvtz_fxp.set_asm("fcvtzs %regx, %sreg, %imm", rd, rn, immu64, sf=1, type=0, opcode=0);
+		fcvtz_fxp.set_asm("fcvtzs %regx, %dreg, %imm", rd, rn, immu64, sf=1, type=1, opcode=0);
+		fcvtz_fxp.set_asm("fcvtzu %regw, %sreg, %imm", rd, rn, immu64, sf=0, type=0, opcode=1);
+		fcvtz_fxp.set_asm("fcvtzu %regw, %dreg, %imm", rd, rn, immu64, sf=0, type=1, opcode=1);
+		fcvtz_fxp.set_asm("fcvtzu %regx, %sreg, %imm", rd, rn, immu64, sf=1, type=0, opcode=1);
+		fcvtz_fxp.set_asm("fcvtzu %regx, %dreg, %imm", rd, rn, immu64, sf=1, type=1, opcode=1);
+		
+		fcvtz_fxp.set_behaviour(fcvtz_fxp);
+		
+		// -----------
+		// C4.6.30
+		// -----------
+		fmov_gen.set_decoder(S=0, type=0, rmode=0, opcode=6);
+		fmov_gen.set_decoder(S=0, type=0, rmode=0, opcode=7);
+		fmov_gen.set_decoder(S=0, type=1, rmode=0, opcode=6);
+		fmov_gen.set_decoder(S=0, type=1, rmode=0, opcode=7);
+		fmov_gen.set_decoder(S=0, type=2, rmode=1, opcode=6);
+		fmov_gen.set_decoder(S=0, type=2, rmode=1, opcode=7);
+		
+		fmov_gen.set_asm("fmov %sreg, %regw", rd, rn, sf=0, type=0, rmode=0, opcode=7);
+		fmov_gen.set_asm("fmov %regw, %sreg", rd, rn, sf=0, type=0, rmode=0, opcode=6);
+		fmov_gen.set_asm("fmov %dreg, %regx", rd, rn, sf=1, type=1, rmode=0, opcode=7);
+		fmov_gen.set_asm("fmov %vreg.D[1], %regx", rd, rn, sf=1, type=2, rmode=1, opcode=7);
+		fmov_gen.set_asm("fmov %regx, %dreg", rd, rn, sf=1, type=1, rmode=0, opcode=6);
+		fmov_gen.set_asm("fmov %regx, %vreg.D[1]", rd, rn, sf=1, type=2, rmode=1, opcode=6);
+		
+		fmov_gen.set_behaviour(fmov_gen);
+		
+		scvtf.set_decoder(S=0, type=0, rmode=0, opcode=2);	// 32/64-bit to sp
+		scvtf.set_decoder(S=0, type=1, rmode=0, opcode=2);	// 32/64-bit to dp
+		
+		scvtf.set_asm("scvtf %sreg, %regw", rd, rn, sf=0, type=0);
+		scvtf.set_asm("scvtf %sreg, %regx", rd, rn, sf=1, type=0);
+		scvtf.set_asm("scvtf %dreg, %regw", rd, rn, sf=0, type=1);
+		scvtf.set_asm("scvtf %dreg, %regx", rd, rn, sf=1, type=1);
+		
+		scvtf.set_behaviour(scvtf);
+		
+		ucvtf.set_decoder(S=0, type=0, rmode=0, opcode=3);	// 32/64-bit to sp
+		ucvtf.set_decoder(S=0, type=1, rmode=0, opcode=3);	// 32/64-bit to dp
+		
+		ucvtf.set_asm("ucvtf %sreg, %regw", rd, rn, sf=0, type=0);
+		ucvtf.set_asm("ucvtf %sreg, %regx", rd, rn, sf=1, type=0);
+		ucvtf.set_asm("ucvtf %dreg, %regw", rd, rn, sf=0, type=1);
+		ucvtf.set_asm("ucvtf %dreg, %regx", rd, rn, sf=1, type=1);
+		
+		ucvtf.set_behaviour(ucvtf);
+		
+		fcvtz.set_decoder(S=0, type=0, rmode=3, opcode=0);
+		fcvtz.set_decoder(S=0, type=0, rmode=3, opcode=1);
+		fcvtz.set_decoder(S=0, type=1, rmode=3, opcode=0);
+		fcvtz.set_decoder(S=0, type=1, rmode=3, opcode=1);
+		
+		fcvtz.set_asm("fcvtzs %regw, %sreg", rd, rn, sf=0, type=0, opcode=0);
+		fcvtz.set_asm("fcvtzu %regw, %sreg", rd, rn, sf=0, type=0, opcode=1);
+		fcvtz.set_asm("fcvtzs %regw, %dreg", rd, rn, sf=0, type=1, opcode=0);
+		fcvtz.set_asm("fcvtzu %regw, %dreg", rd, rn, sf=0, type=1, opcode=1);
+		fcvtz.set_asm("fcvtzs %regx, %sreg", rd, rn, sf=1, type=0, opcode=0);
+		fcvtz.set_asm("fcvtzu %regx, %sreg", rd, rn, sf=1, type=0, opcode=1);
+		fcvtz.set_asm("fcvtzs %regx, %dreg", rd, rn, sf=1, type=1, opcode=0);
+		fcvtz.set_asm("fcvtzu %regx, %dreg", rd, rn, sf=1, type=1, opcode=1);
+		fcvtz.set_behaviour(fcvtz);
+		
+		fcvti.set_decoder(S=0, type=0, rmode=0, opcode=0);		// fcvtns wx, s
+		fcvti.set_decoder(S=0, type=0, rmode=0, opcode=1);		// fcvtnu wx, s
+		fcvti.set_decoder(S=0, type=0, rmode=0, opcode=4);		// fcvtas wx, s
+		fcvti.set_decoder(S=0, type=0, rmode=0, opcode=5);		// fcvtau wx, s
+		fcvti.set_decoder(S=0, type=0, rmode=1, opcode=0);		// fcvtps wx, s
+		fcvti.set_decoder(S=0, type=0, rmode=1, opcode=1);		// fcvtpu wx, s
+		fcvti.set_decoder(S=0, type=0, rmode=2, opcode=0);		// fcvtms wx, s
+		fcvti.set_decoder(S=0, type=0, rmode=2, opcode=1);		// fcvtmu wx, s
+		fcvti.set_decoder(S=0, type=1, rmode=0, opcode=0);		// fcvtns wx, d
+		fcvti.set_decoder(S=0, type=1, rmode=0, opcode=1);		// fcvtnu wx, d
+		fcvti.set_decoder(S=0, type=1, rmode=0, opcode=4);		// fcvtas wx, d
+		fcvti.set_decoder(S=0, type=1, rmode=0, opcode=5);		// fcvtau wx, d
+		fcvti.set_decoder(S=0, type=1, rmode=1, opcode=0);		// fcvtps wx, d
+		fcvti.set_decoder(S=0, type=1, rmode=1, opcode=1);		// fcvtpu wx, d
+		fcvti.set_decoder(S=0, type=1, rmode=2, opcode=0);		// fcvtms wx, d
+		fcvti.set_decoder(S=0, type=1, rmode=2, opcode=1);		// fcvtmu wx, d
+		
+		fcvti.set_asm("fcvtns %regw, %sreg", rd, rn, sf=0, type=0, opcode=0, rmode=0);
+		fcvti.set_asm("fcvtnu %regw, %sreg", rd, rn, sf=0, type=0, opcode=1, rmode=0);
+		fcvti.set_asm("fcvtas %regw, %sreg", rd, rn, sf=0, type=0, opcode=4, rmode=0);
+		fcvti.set_asm("fcvtau %regw, %sreg", rd, rn, sf=0, type=0, opcode=5, rmode=0);
+		fcvti.set_asm("fcvtns %regw, %dreg", rd, rn, sf=0, type=1, opcode=0, rmode=0);
+		fcvti.set_asm("fcvtnu %regw, %dreg", rd, rn, sf=0, type=1, opcode=1, rmode=0);
+		fcvti.set_asm("fcvtas %regw, %dreg", rd, rn, sf=0, type=1, opcode=4, rmode=0);
+		fcvti.set_asm("fcvtau %regw, %dreg", rd, rn, sf=0, type=1, opcode=5, rmode=0);
+		fcvti.set_asm("fcvtns %regx, %sreg", rd, rn, sf=1, type=0, opcode=0, rmode=0);
+		fcvti.set_asm("fcvtnu %regx, %sreg", rd, rn, sf=1, type=0, opcode=1, rmode=0);
+		fcvti.set_asm("fcvtas %regx, %sreg", rd, rn, sf=1, type=0, opcode=4, rmode=0);
+		fcvti.set_asm("fcvtau %regx, %sreg", rd, rn, sf=1, type=0, opcode=5, rmode=0);
+		fcvti.set_asm("fcvtns %regx, %dreg", rd, rn, sf=1, type=1, opcode=0, rmode=0);
+		fcvti.set_asm("fcvtnu %regx, %dreg", rd, rn, sf=1, type=1, opcode=1, rmode=0);
+		fcvti.set_asm("fcvtas %regx, %dreg", rd, rn, sf=1, type=1, opcode=4, rmode=0);
+		fcvti.set_asm("fcvtau %regx, %dreg", rd, rn, sf=1, type=1, opcode=5, rmode=0);
+		
+		fcvti.set_asm("fcvtps %regw, %sreg", rd, rn, sf=0, type=0, opcode=0, rmode=1);
+		fcvti.set_asm("fcvtpu %regw, %sreg", rd, rn, sf=0, type=0, opcode=1, rmode=1);
+		fcvti.set_asm("fcvtps %regw, %dreg", rd, rn, sf=0, type=1, opcode=0, rmode=1);
+		fcvti.set_asm("fcvtpu %regw, %dreg", rd, rn, sf=0, type=1, opcode=1, rmode=1);
+		fcvti.set_asm("fcvtps %regx, %sreg", rd, rn, sf=1, type=0, opcode=0, rmode=1);
+		fcvti.set_asm("fcvtpu %regx, %sreg", rd, rn, sf=1, type=0, opcode=1, rmode=1);
+		fcvti.set_asm("fcvtps %regx, %dreg", rd, rn, sf=1, type=1, opcode=0, rmode=1);
+		fcvti.set_asm("fcvtpu %regx, %dreg", rd, rn, sf=1, type=1, opcode=1, rmode=1);
+		
+		fcvti.set_asm("fcvtms %regw, %sreg", rd, rn, sf=0, type=0, opcode=0, rmode=2);
+		fcvti.set_asm("fcvtmu %regw, %sreg", rd, rn, sf=0, type=0, opcode=1, rmode=2);
+		fcvti.set_asm("fcvtms %regw, %dreg", rd, rn, sf=0, type=1, opcode=0, rmode=2);
+		fcvti.set_asm("fcvtmu %regw, %dreg", rd, rn, sf=0, type=1, opcode=1, rmode=2);
+		fcvti.set_asm("fcvtms %regx, %sreg", rd, rn, sf=1, type=0, opcode=0, rmode=2);
+		fcvti.set_asm("fcvtmu %regx, %sreg", rd, rn, sf=1, type=0, opcode=1, rmode=2);
+		fcvti.set_asm("fcvtms %regx, %dreg", rd, rn, sf=1, type=1, opcode=0, rmode=2);
+		fcvti.set_asm("fcvtmu %regx, %dreg", rd, rn, sf=1, type=1, opcode=1, rmode=2);
+		
+		fcvti.set_behaviour(fcvti);
+	};
+};

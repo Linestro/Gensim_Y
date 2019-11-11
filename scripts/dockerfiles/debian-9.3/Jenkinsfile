@@ -1,0 +1,21 @@
+#!/usr/bin/env groovy
+
+pipeline {
+    agent any;
+
+    stages {
+        stage ('Build Image') {
+            steps {
+                sh 'cd scripts/dockerfiles/archlinux; docker build -t gensim-debian-9.3 . '
+            }
+        }
+
+        stage ('Build') {
+            steps {
+                sh '''
+                cd scripts/dockerfiles && sh test-dockerfile.sh debian-9.3/
+                '''
+            }
+        }
+    }
+}

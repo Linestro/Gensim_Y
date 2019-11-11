@@ -1,0 +1,27 @@
+TARGET_ADD_SOURCES(gensim-lib
+	EmitSSA.cpp
+	SSAActionPrototype.cpp
+	SSABlock.cpp
+	SSABuilder.cpp
+	SSACloner.cpp
+	SSAContext.cpp
+	SSAFormAction.cpp
+	SSAInliner.cpp
+	SSAPrettyPrint.cpp
+	SSAStatementVisitor.cpp
+	SSASymbol.cpp
+	SSAType.cpp
+	SSATypeFormatter.cpp
+	SSATypeManager.cpp
+	SSAValue.cpp
+	SSAWalkerFactory.cpp
+)
+
+ADD_SUBDIRECTORY(analysis)
+ADD_SUBDIRECTORY(io)
+ADD_SUBDIRECTORY(metadata)
+ADD_SUBDIRECTORY(passes)
+ADD_SUBDIRECTORY(printers)
+ADD_SUBDIRECTORY(statement)
+ADD_SUBDIRECTORY(testing)
+ADD_SUBDIRECTORY(validation)
