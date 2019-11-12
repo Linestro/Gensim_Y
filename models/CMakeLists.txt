@@ -97,6 +97,5 @@ function(define_model target-name arch-name arch-file)
 endfunction()
 
 ADD_SUBDIRECTORY(armv7)
-ADD_SUBDIRECTORY(armv8)
 ADD_SUBDIRECTORY(risc-v)
 ADD_SUBDIRECTORY(x86-64)
